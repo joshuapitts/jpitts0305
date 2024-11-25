@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upcoming Movies - Movie Booking System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <header>
+        <h1>Welcome to Our Movie Booking System</h1>
+        <nav>
+            <a href="home.html">Home</a>
+            <a href="catalog.html">Current Movies</a>
+            <a href="upcoming.html">Upcoming Movies</a>
+            <a href="history.html">Ticket History</a>
+            <a href="#" onclick="logoutUser(event)">Logout</a>
+        </nav>
+    </header>
+
+    <!-- Main Section -->
+    <section class="main-content">
+        <h2>Upcoming Movies</h2>
+        <div class="movie-grid" id="movie-list">
+            <!-- Dynamic movie list will be rendered here by JavaScript -->
+        </div>
+    </section>
+
+    <script src="main.js"></script>
+</body>
+</html>
+

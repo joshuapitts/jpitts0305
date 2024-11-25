@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Movie Booking System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <header>
+        <h1>Admin Dashboard - Movie Booking System</h1>
+        <nav>
+            <a href="home.html">Home</a>
+            <a href="catalog.html">Current Movies</a>
+            <a href="upcoming.html">Upcoming Movies</a>
+            <a href="#" onclick="logoutUser(event)">Logout</a>
+        </nav>
+    </header>
+
+    <!-- System Status Section -->
+    <section id="system-status">
+        <h2>System Status</h2>
+        <p>Total Tickets Sold: <span id="total-tickets-sold">Loading...</span></p>
+
+        <!-- Current Movies -->
+        <h3>Currently Playing Movies:</h3>
+        <ul id="current-movies-list"></ul>
+
+        <!-- Upcoming Movies -->
+        <h3>Upcoming Movies:</h3>
+        <ul id="upcoming-movies-list"></ul>
+    </section>
+
+    <!-- Manage Shows Section -->
+    <section id="manage-shows">
+        <h2>Manage Shows</h2>
+        <div>
+            <h3>Add New Show</h3>
+            <form id="add-show-form" enctype="multipart/form-data">
+                <label for="show-title">Title:</label>
+                <input type="text" id="show-title" required>
+            
+                <label for="show-synopsis">Synopsis:</label>
+                <textarea id="show-synopsis" required></textarea>
+            
+                <label for="show-time">Showtime:</label>
+                <input type="text" id="show-time" required>
+            
+                <label for="show-price">Ticket Price:</label>
+                <input type="number" id="show-price" required>
+            
+                <label for="show-type">Type:</label>
+                <select id="show-type" required>
+                    <option value="current">Current</option>
+                    <option value="upcoming">Upcoming</option>
+                </select>
+            
+                <label for="show-image">Image:</label>
+                <input type="file" id="show-image" name="image" accept="image/*" required>
+            
+                <button type="submit">Add Show</button>
+                <p id="add-show-message" style="color: green; display: none;">Show added successfully!</p>
+            </form>
+            
+        </div>
+
+        <!-- Current Show Listings -->
+        <h3>Current Show Listings</h3>
+        <ul id="show-list"></ul>
+    </section>
+
+    <!-- Include Main JavaScript File -->
+    <script src="main.js"></script>
+
+    <!-- Admin Access Check Script -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const isAdmin = localStorage.getItem("isAdmin") === "true"; // Check admin status
+
+            if (!isAdmin) {
+                alert("Unauthorized access!");
+                window.location.href = "login.html"; // Redirect non-admin users
+            }
+        });
+    </script>
+</body>
+</html>

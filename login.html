@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Movie Booking System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <header>
+        <h1>Welcome to Our Movie Booking System</h1>
+        <nav>
+            <a href="home.html">Home</a>
+            <a href="catalog.html">Current Movies</a>
+            <a href="upcoming.html">Upcoming Movies</a>
+            <a href="history.html">Ticket History</a>
+        </nav>
+    </header>
+
+    <section id="login-section">
+        <h2>Login</h2>
+        <form id="login-form">
+            <!-- Username -->
+            <label for="username">Email:</label>
+            <input type="email" id="username" placeholder="Enter your email" required>
+            
+            <!-- Password -->
+            <label for="password">Password:</label>
+            <input type="password" id="password" placeholder="Enter your password" required>
+            
+            <!-- Login Button -->
+            <button type="submit">Login</button>
+            
+            <!-- Error Message -->
+            <p id="login-message" style="color: red; display: none;">Invalid email or password. Please try again.</p>
+        </form>
+        
+        <!-- Link to Register Page -->
+        <p>Don't have an account? <a href="register.html">Register here</a>.</p>
+    </section>
+
+    <!-- Include Main JavaScript -->
+    <script src="main.js"></script>
+
+    <!-- Inline JavaScript for Testing -->
+    <script>
+        // Attach the login function to the form's submit event
+        document.getElementById("login-form").addEventListener("submit", function(event) {
+            event.preventDefault(); // Prevent page reload
+            loginUser(event); // Call the login function from main.js
+        });
+    </script>
+</body>
+</html>

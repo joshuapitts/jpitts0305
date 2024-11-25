@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Details - Movie Booking System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <header>
+        <h1>Welcome to Our Movie Booking System</h1>
+        <nav>
+            <a href="home.html">Home</a>
+            <a href="catalog.html">Current Movies</a>
+            <a href="upcoming.html">Upcoming Movies</a>
+            <a href="history.html">Ticket History</a>
+            <a href="#" onclick="logoutUser(event)">Logout</a>
+        </nav>
+    </header>
+
+    <!-- Movie Details Section -->
+    <section id="movie-details-section">
+        <h2 id="movie-title">Loading...</h2>
+        <img id="movie-image" movieImage.src = movie.image;
+        alt="Movie Poster" class="movie-image">
+        <p id="movie-synopsis"></p>
+        <p><strong>Type:</strong> <span id="movie-type"></span></p>
+
+        <!-- Theater Selection Dropdown -->
+        <div id="theater-selection">
+            <h3>Select a Theater:</h3>
+            <select id="theater-dropdown">
+                <option value="" disabled selected>Select a theater</option>
+                <option value="Lubbock">Lubbock</option>
+                <option value="Amarillo">Amarillo</option>
+                <option value="Levelland">Levelland</option>
+                <option value="Plainview">Plainview</option>
+                <option value="Snyder">Snyder</option>
+                <option value="Abilene">Abilene</option>
+            </select>
+        </div>
+
+        <!-- Showtime Selection with Checkboxes -->
+        <div id="showtime-selection">
+            <h3>Select a Showtime:</h3>
+            <div id="movie-showtimes"></div>
+        </div>
+
+        <!-- Book Ticket Button -->
+        <button id="book-ticket-btn" style="display: none;" onclick="bookSelectedShowtime()">Book Ticket</button>
+    </section>
+
+    <!-- Electronic Ticket Section -->
+    <section id="ticket-section" style="margin-top: 20px;">
+        <!-- Ticket details will be displayed here upon successful booking -->
+    </section>
+
+    <!-- Review Section -->
+    <section id="reviews-section">
+        <h2>Reviews</h2>
+        <div id="reviews-list"></div>
+    
+        <form id="review-form" onsubmit="submitReview(event)">
+            <textarea id="review-text" placeholder="Write your review here..." required></textarea>
+            <button type="submit">Submit Review</button>
+        </form>
+    </section>
+    
+
+    <script src="main.js"></script>
+</body>
+</html>
