@@ -97,3 +97,48 @@ section {
     height: 80px;
     margin-bottom: 10px;
 }
+
+#ticket-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+#ticket-history-table th, 
+#ticket-history-table td {
+    padding: 10px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+#ticket-history-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+#ticket-history-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+#history-section {
+    margin-top: 20px;
+    padding: 20px;
+}
+
+
+#book-ticket-btn {
+    display: block;
+    margin: 30px auto 0;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#book-ticket-btn:hover {
+    background-color: #0056b3;
+}

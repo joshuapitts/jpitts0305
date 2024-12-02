@@ -7,8 +7,11 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import multer from 'multer';
+import Stripe from "stripe";
 
 dotenv.config();
+const stripe = new Stripe(STRIPE_PRIVATE_KEY);
+
 const app = express();
 const PORT = 4000;
 
@@ -16,6 +19,7 @@ const PORT = 4000;
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
+
 
 // change the password to yours, or just an empty string
 // Database connection
@@ -39,15 +43,16 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-
 // Secret key for tokens
-const JWT_SECRET = process.env.JWT_SECRET;
-
+const JWT_SECRET = 'hmNgNbZEWVVQNPeimvUUs5gwHX+3QI4KTXum2LOQlKg=';
+const CLIENT_URL= 'http://localhost:4000';
+const STRIPE_PRIVATE_KEY= 'sk_test_51QNGtMLhG6AphnNLiKRbe7ccExxWz8ELz206XRhmwer002l3uAW7vWRFGdSEXgkk5A4DFN2w9orH1YLFP0dilp3F00vzAgV2Ra';
 
 // ------------------ MIDDLEWARE --------------------------
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(express.json());
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 // static files
@@ -115,7 +120,7 @@ app.post('/register', async (req, res) => {
         if (error.code === "ER_DUP_ENTRY") {
             res.status(400).json({ message: "Email is already in use" });
         } else {
-            res.status(500).json({ message: "Internal server error" });
+            res.status(500).json({ message: "error" });
         }
     }
 });
@@ -167,8 +172,6 @@ app.get('/movies', async (req, res) => {
             showtimes: JSON.parse(movie.showtimes),
             image: `/assets/${movie.image.split('/').pop()}`
         }));
-
-        console.log("Movies from Database:", movies);
         res.json(movies);
     } catch (error) {
         console.error("Error fetching movies:", error);
@@ -190,7 +193,7 @@ app.get('/reviews/:movieId', async (req, res) => {
             [movieId]
         );
 
-        res.json(reviews); // Return the reviews as a JSON response
+        res.json(reviews);
     } catch (error) {
         console.error("Error fetching reviews:", error);
         res.status(500).json({ message: "Failed to fetch reviews" });
@@ -269,10 +272,11 @@ app.post('/book-ticket', authenticateToken, async (req, res) => {
         });
 
         await pool.query(
-            `INSERT INTO Ticket_History (user_id, movie_id, movie_title, showtime, seats, ticket_number, total_cost)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [userId, movieId, movie.title, showtime, seats, ticketNumber, totalCost]
-        );
+            `INSERT INTO Ticket_History 
+             (user_id, movie_id, movie_title, showtime, seats, ticket_number, total_cost, theater)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [userId, movieId, movie.title, showtime, seats, ticketNumber, totalCost, theater]
+        );        
 
         await pool.query(
             'UPDATE Movies SET ticketsSold = ticketsSold + ? WHERE id = ?',
@@ -318,6 +322,40 @@ app.post('/ticket-history', authenticateToken, async (req, res) => {
         res.status(500).send("Failed to fetch ticket history.");
     }
 });
+
+// update history
+app.post('/update-ticket-history', async (req, res) => {
+    const { movieId, seats, userEmail, showtime } = req.body;
+
+    try {
+        // Fetch movie details
+        const [movieRows] = await pool.query('SELECT * FROM Movies WHERE id = ?', [movieId]);
+        const movie = movieRows[0];
+
+        if (!movie) {
+            return res.status(404).send("Movie not found.");
+        }
+
+        // Update ticket history
+        const totalCost = movie.ticketPrice * seats;
+        const ticketNumber = `TKT-${movieId}-${Date.now()}`;
+
+        await pool.query(
+            `INSERT INTO Ticket_History (user_id, movie_id, movie_title, showtime, seats, ticket_number, total_cost)
+             VALUES ((SELECT user_id FROM User_Info WHERE email = ?), ?, ?, ?, ?, ?, ?)`,
+            [userEmail, movieId, movie.title, showtime, seats, ticketNumber, totalCost]
+        );
+
+        // Update tickets sold in Movies table
+        await pool.query('UPDATE Movies SET ticketsSold = ticketsSold + ? WHERE id = ?', [seats, movieId]);
+
+        res.status(200).send("Ticket history updated successfully.");
+    } catch (error) {
+        console.error("Error updating ticket history:", error.message);
+        res.status(500).send("Failed to update ticket history.");
+    }
+});
+
 
 // ------------------ ADMIN ROUTES --------------------------
 
@@ -395,6 +433,69 @@ app.delete('/admin/remove-show/:id', async (req, res) => {
         res.status(500).send("Failed to remove the show. Please try again.");
     }
 });
+
+// ------------------ PAYMENT --------------------------
+app.post("/create-checkout-session", async (req, res) => {
+    try {
+        const { items, userEmail, showtime, theater } = req.body;
+
+        // Fetch movie details
+        const movieIds = items.map(item => item.id);
+        const [movies] = await pool.query("SELECT id, title, ticketPrice FROM Movies WHERE id IN (?)", [movieIds]);
+
+        if (movies.length === 0) {
+            return res.status(400).json({ error: "No valid movies found for the session." });
+        }
+
+        const movie = movies[0];
+        const totalCost = movie.ticketPrice * items[0].quantity;
+
+        // Generate a unique ticket number
+        const ticketNumber = `TKT-${movie.id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+        // Get the user ID
+        const [userRows] = await pool.query('SELECT user_id FROM User_Info WHERE email = ?', [userEmail]);
+        if (userRows.length === 0) {
+            return res.status(404).json({ error: "User not found." });
+        }
+
+        const userId = userRows[0].user_id;
+
+        // Insert into Ticket_History
+        await pool.query(
+            `INSERT INTO Ticket_History 
+             (user_id, movie_id, movie_title, showtime, seats, ticket_number, total_cost, theater)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [userId, movie.id, movie.title, showtime, items[0].quantity, ticketNumber, totalCost, theater]
+        );
+
+        // Update tickets sold
+        await pool.query('UPDATE Movies SET ticketsSold = ticketsSold + ? WHERE id = ?', [items[0].quantity, movie.id]);
+
+        // Create Stripe session
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ["card"],
+            mode: "payment",
+            line_items: items.map(item => ({
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: movie.title },
+                    unit_amount: Math.round(movie.ticketPrice * 100),
+                },
+                quantity: item.quantity,
+            })),
+            success_url: `${CLIENT_URL}/success.html?ticketNumber=${ticketNumber}`,
+            cancel_url: `${CLIENT_URL}/cancel.html`,
+        });
+
+        res.json({ url: session.url });
+    } catch (error) {
+        console.error("Error creating checkout session:", error);
+        res.status(500).json({ error: "Failed to create checkout session." });
+    }
+});
+
+
 
 // ------------------ ERROR HANDLING --------------------------
 

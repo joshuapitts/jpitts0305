@@ -11,9 +11,6 @@
     <header>
         <h1>Admin Dashboard - Movie Booking System</h1>
         <nav>
-            <a href="home.html">Home</a>
-            <a href="catalog.html">Current Movies</a>
-            <a href="upcoming.html">Upcoming Movies</a>
             <a href="#" onclick="logoutUser(event)">Logout</a>
         </nav>
     </header>
@@ -76,11 +73,11 @@
     <!-- Admin Access Check Script -->
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            const isAdmin = localStorage.getItem("isAdmin") === "true"; // Check admin status
+            const isAdmin = localStorage.getItem("isAdmin") === "true";
 
             if (!isAdmin) {
                 alert("Unauthorized access!");
-                window.location.href = "login.html"; // Redirect non-admin users
+                window.location.href = "login.html";
             }
         });
     </script>

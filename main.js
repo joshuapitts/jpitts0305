@@ -3,11 +3,8 @@ window.onload = function () {
 
     if (path.includes("admin.html")) {
         initializeAdminPage();
-    } else if (path.includes("search.html")) {
-        document.getElementById("search-form").addEventListener("submit", searchMovies);
     } else if (path.includes("movie-details.html")) {
         displayMovieDetails();
-        document.getElementById("review-form").addEventListener("submit", submitReview);
     } else if (path.includes("history.html")) {
         loadTicketHistory();
     } else if (path.includes("home.html")) {
@@ -18,6 +15,7 @@ window.onload = function () {
         fetchMoviesForUpcoming();
     }
 };
+
 
 // ------------------ MOVIE FETCHING --------------------------
 //fetch and display movies on home.html
@@ -224,74 +222,54 @@ async function fetchMoviesForUpcoming() {
 // ------------------ USER ACTIONS --------------------------
 // Booking Ticket for showtime
 function bookSelectedShowtime() {
-    const theater = document.getElementById("theater-dropdown").value;
-
-    if (!theater) {
-        alert("Please select a theater.");
-        return;
-    }
-
     const selectedShowtime = document.querySelector('input[name="showtime"]:checked');
+    const selectedTheater = document.getElementById('theater-dropdown').value;
+
     if (!selectedShowtime) {
         alert("Please select a showtime.");
         return;
     }
 
-    const seats = parseInt(prompt("Enter the number of tickets (1-10):"), 10);
+    if (!selectedTheater) {
+        alert("Please select a theater.");
+        return;
+    }
 
+    const seats = parseInt(prompt("Enter the number of tickets (1-10):"), 10);
     if (isNaN(seats) || seats <= 0 || seats > 10) {
         alert("Invalid number of tickets. Please enter a value between 1 and 10.");
         return;
     }
 
     const movieId = new URLSearchParams(window.location.search).get("id");
-    if (!movieId) {
-        alert("Invalid movie ID.");
-        return;
-    }
+    const userEmail = localStorage.getItem("loggedInUser");
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-        alert("You are not logged in. Please log in to book tickets.");
+    if (!movieId || !userEmail) {
+        alert("Invalid movie ID or not logged in.");
         window.location.href = "login.html";
         return;
     }
 
-    console.log("Booking details:", { movieId, showtime: selectedShowtime.value, seats });
-
-    fetch('/book-ticket', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-        },
+    fetch("/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            movieId: parseInt(movieId, 10),
+            items: [{ id: parseInt(movieId, 10), quantity: seats }],
+            userEmail,
             showtime: selectedShowtime.value,
-            seats,
+            theater: selectedTheater
         }),
     })
-        .then(async (response) => {
-            if (response.ok) {
-                const data = await response.json();
-                alert(`Booking confirmed!\n\nMovie: ${data.movie}\nShowtime: ${data.showtime}\nSeats: ${data.seats}\nTotal Cost: $${data.totalCost}\nTicket Number: ${data.ticketNumber}`);
-                document.getElementById("ticket-section").innerHTML = `
-                    <h3>Your Confirmation:</h3>
-                    <p><strong>Movie:</strong> ${data.movie}</p>
-                    <p><strong>Showtime:</strong> ${data.showtime}</p>
-                    <p><strong>Seats:</strong> ${data.seats}</p>
-                    <p><strong>Total Cost:</strong> $${data.totalCost}</p>
-                    <p><strong>Ticket Number:</strong> ${data.ticketNumber}</p>
-                `;
-            } else {
-                const errorData = await response.json();
-                console.error("Booking error response:", errorData);
-                alert(`Booking failed: ${errorData.message}`);
-            }
+        .then((res) => {
+            if (res.ok) return res.json();
+            return res.json().then((json) => Promise.reject(json));
         })
-        .catch((error) => {
-            console.error("Error during booking:", error);
-            alert("An unexpected error occurred. Please try again later.");
+        .then(({ url }) => {
+            window.location = url;
+        })
+        .catch((err) => {
+            console.error("Error during booking:", err);
+            alert("Failed to book tickets. Please try again.");
         });
 }
 
@@ -313,15 +291,22 @@ function loadTicketHistory() {
     .then(history => {
         const tableBody = document.querySelector("#ticket-history-table tbody");
         tableBody.innerHTML = "";
-    
+
         if (history.length === 0) {
-            tableBody.innerHTML = "<tr><td colspan='2'>No ticket history found.</td></tr>";
+            tableBody.innerHTML = "<tr><td colspan='4'>No ticket history found.</td></tr>";
         } else {
-            history.forEach(ticket => {
+            history.forEach((ticket, index) => {
                 const row = document.createElement("tr");
+
+                // Extract date and time from `showtime`
+                const formattedTime = ticket.showtime || "Unknown";
+                const ticketNumber = ticket.ticket_number || "Unknown";
+
                 row.innerHTML = `
+                    <td>${index + 1}</td>
                     <td>${ticket.movie_title || "Unknown"}</td>
-                    <td>${ticket.showtime || "Unknown"} (${ticket.booking_date || "Unknown"})</td>
+                    <td>${formattedTime} (${ticketNumber})</td>
+                    <td>${ticket.theater || "Unknown"}</td>
                 `;
                 tableBody.appendChild(row);
             });
@@ -330,6 +315,8 @@ function loadTicketHistory() {
     .catch(err => alert("Error loading ticket history."));
 }
 
+
+// search for movie
 async function searchMovies(event) {
     event.preventDefault();
     const query = document.getElementById("search-input").value.toLowerCase();
@@ -339,8 +326,6 @@ async function searchMovies(event) {
     try {
         const response = await fetch('/movies');
         const movies = await response.json();
-
-        // Filter movies based on the search query
         const results = movies.filter(movie => movie.title.toLowerCase().includes(query));
 
         // Display results
@@ -354,7 +339,6 @@ async function searchMovies(event) {
                         <h3>${movie.title}</h3>
                     </a>
                     <p>${movie.synopsis}</p>
-                    ${movie.type === "current" ? `<button class="ticket-btn">Book Ticket</button>` : "<p>Coming Soon</p>"}
                 `;
                 resultsContainer.appendChild(movieCard);
             });
@@ -400,6 +384,7 @@ async function loadSystemStatus() {
     }
 }
 
+// add a show
 async function addShow(event) {
     event.preventDefault();
 
@@ -481,7 +466,6 @@ await fetchMovies();
 loadSystemStatus();
 displayShowList();
 
-// Attach event listener for add show form
 document.getElementById("add-show-form").addEventListener("submit", addShow);
 }
 
@@ -575,7 +559,7 @@ function displayMovieDetails() {
         });
 }
 
-//
+// logout user
 function logoutUser(event) {
     event.preventDefault();
 
@@ -602,7 +586,6 @@ function logoutUser(event) {
         alert("An error occurred. Please try again.");
     });
 }
-
 
 // Function to handle user or admin login
 function loginUser(event) {
@@ -645,7 +628,7 @@ fetch('/login', {
     });
 }
 
-//
+// register user
 async function registerUser(event) {
     event.preventDefault(); // Prevent page reload on form submission
 
@@ -698,3 +681,22 @@ try {
     console.error("Error fetching movies:", error);
 }
 }
+
+// Confirmation ticket
+function displayConfirmationTicketNumber() {
+    const params = new URLSearchParams(window.location.search);
+    const ticketNumber = params.get("ticketNumber");
+
+    if (ticketNumber) {
+        document.getElementById("ticket-number").textContent = ticketNumber;
+    } else {
+        document.getElementById("ticket-number").textContent = "Error: Ticket number not found.";
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (window.location.pathname.includes("success.html")) {
+        displayConfirmationTicketNumber();
+    }
+});
+

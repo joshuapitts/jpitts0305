@@ -14,8 +14,8 @@
             <a href="home.html">Home</a>
             <a href="catalog.html">Current Movies</a>
             <a href="upcoming.html">Upcoming Movies</a>
+            <a href="history.html">Ticket History</a>
             <a href="#" onclick="logoutUser(event)">Logout</a>
-
         </nav>
     </header>
 
@@ -24,7 +24,7 @@
         <h2>Search for a Movie</h2>
         <form
             id="search-form"
-            onsubmit="event.preventDefault(); fetchMoviesForSearch(document.getElementById('search-input').value);"
+            onsubmit="event.preventDefault(); searchMovies(event);"
         >
             <label for="search-input">Enter Movie Title:</label>
             <input
@@ -35,7 +35,11 @@
             />
             <button type="submit">Search</button>
         </form>
-        <div id="search-results" class="movie-grid"></div>
+        <div id="search-results" class="movie-grid">
+            <!-- Dynamic search results will be rendered here -->
+        </div>
     </section>
-    
-    
+
+    <script src="main.js"></script>
+</body>
+</html>
